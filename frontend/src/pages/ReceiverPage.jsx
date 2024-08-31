@@ -17,10 +17,12 @@ const ReceiverPage = () => {
       if (response.status === 200) {
         // Extract the filename and filetype from the response
         const { filename, filetype } = response.data;
+        console.log(response.data);
+        
         
         // Set the file URL including the filename with extension
         setFileUrl(`http://localhost:5000/file/${receivingID}`);
-        console.log(fileUrl);
+        console.log(fileUrl,fileType);
         
         setFileType(filetype);
       }

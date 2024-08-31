@@ -2,29 +2,36 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const multer = require('multer');
+const mime = require('mime-types'); // For MIME type detection
 const path = require('path');
 const cors = require('cors');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-const mime = require('mime-types');
+const { v4: uuidv4 } = require('uuid'); // For generating unique IDs
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: 'http://localhost:5173', // Replace with your frontend URL
+    methods: ['GET', 'POST'],
+  },
+});
 
 // Ensure the 'uploads' directory exists
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.join(__dirname, '../frontend/dist/uploads');
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure CORS
+// Enable CORS for express
 app.use(cors({
-  origin: 'http://192.168.1.45:3030', // Your frontend URL
+  origin: 'http://localhost:5173', // Replace with your frontend URL
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
+
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 // Generate a unique 4-digit code
 const generateCode = () => {
@@ -40,7 +47,7 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    const uniqueId = uuidv4();
+    const uniqueId = uuidv4(); // Generate a unique ID
     cb(null, `${uniqueId}-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
@@ -69,26 +76,51 @@ app.post('/upload', upload.single('file'), (req, res) => {
   }
 });
 
-// Handle file request
+// API route to get file metadata
+app.get('/file-metadata/:code', (req, res) => {
+  const filename = codeToFilename[req.params.code];
+  
+  if (!filename) {
+    return res.status(404).send('File not found');
+  }
+
+  const filePath = path.join(uploadsDir, filename);
+  
+  if (fs.existsSync(filePath)) {
+    const fileStats = fs.statSync(filePath);
+    const fileType = mime.lookup(filePath) || 'application/octet-stream';
+    res.json({
+      filename: path.basename(filePath),
+      filetype: fileType,
+      size: fileStats.size
+    });
+  } else {
+    res.status(404).send('File not found');
+  }
+});
+
+// API route to get the file
 app.get('/file/:code', (req, res) => {
   const filename = codeToFilename[req.params.code];
   
   if (!filename) {
     return res.status(404).send('File not found');
   }
-  
+
   const filePath = path.join(uploadsDir, filename);
-  const mimeType = mime.lookup(filename);
+  
+  if (fs.existsSync(filePath)) {
+    const fileType = mime.lookup(filePath) || 'application/octet-stream';
+    res.setHeader('Content-Type', fileType);
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('File not found');
+  }
+});
 
-  res.setHeader('Content-Type', mimeType || 'application/octet-stream');
-  res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filename)}"`);
-
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error('Error sending file:', err);
-      res.status(err.status || 500).send('Error sending file');
-    }
-  });
+// Catch-all route to serve React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 // Socket.io connection
