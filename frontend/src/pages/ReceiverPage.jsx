@@ -10,7 +10,7 @@ const ReceiverPage = () => {
     if (!receivingID) return;
   
     try {
-      const response = await axios.get(`http://localhost:5000/file/${receivingID}`, {
+      const response = await axios.get(`https://heliso.onrender.com//file/${receivingID}`, {
         responseType: 'json',
       });
       
@@ -21,7 +21,7 @@ const ReceiverPage = () => {
         
         
         // Set the file URL including the filename with extension
-        setFileUrl(`http://localhost:5000/file/${receivingID}`);
+        setFileUrl(`https://heliso.onrender.com//file/${receivingID}`);
         console.log(fileUrl,fileType);
         
         setFileType(filetype);

@@ -12,7 +12,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: 'http://localhost:5173', // Replace with your frontend URL
+    origin: 'https://heliso.onrender.com/', // Replace with your frontend URL
     methods: ['GET', 'POST'],
   },
 });
@@ -26,7 +26,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Enable CORS for express
 app.use(cors({
-  origin: 'http://localhost:5173', // Replace with your frontend URL
+  origin: 'https://heliso.onrender.com/', // Replace with your frontend URL
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
