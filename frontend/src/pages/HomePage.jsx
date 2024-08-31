@@ -16,7 +16,7 @@ const HomePage = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('https://heliso.onrender.com//upload', formData, {
+      const response = await axios.post('https://heliso.onrender.com/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
